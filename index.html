@@ -9,8 +9,21 @@
 <body class="bg-slate-900 text-white min-h-screen p-6">
   <div class="max-w-2xl mx-auto">
     <h1 class="text-3xl font-bold text-center mb-2">QR Kód Vadászat</h1>
-    <p id="status-message" class="text-center text-yellow-400 font-semibold mb-6"></p>
+    
+    <!-- Értesítési sáv -->
+    <div id="status-card" class="hidden mb-6 p-4 rounded-lg bg-slate-800 border border-slate-700 text-center">
+      <p id="status-message" class="text-yellow-400 font-semibold mb-3"></p>
+      
+      <!-- Névbeviteli űrlap -->
+      <div id="name-form" class="hidden flex flex-col sm:flex-row gap-2 justify-center items-center">
+        <input type="text" id="finder-name-input" placeholder="A te neved..." class="px-4 py-2 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 w-full sm:w-auto">
+        <button id="save-name-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded w-full sm:w-auto transition">
+          Mentés
+        </button>
+      </div>
+    </div>
 
+    <!-- QR-kódok listája -->
     <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <p class="text-gray-400 col-span-2 text-center">Betöltés...</p>
     </div>
@@ -18,9 +31,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // IDE ILLESZD BE A SAJÁT FIREBASE CONFIG-ODAT:
     const firebaseConfig = {
       apiKey: "AIzaSyDIMi7p8hoiiRjUP1zWMohMn0VUYX8jrYU",
       authDomain: "qr-game-5d51b.firebaseapp.com",
@@ -33,48 +45,94 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // URL paraméter lekérése (pl. ?code=kod_01)
     const urlParams = new URLSearchParams(window.location.search);
     const scannedCode = urlParams.get('code');
 
     async function initGame() {
+      const statusCard = document.getElementById('status-card');
       const statusEl = document.getElementById('status-message');
+      const nameForm = document.getElementById('name-form');
+      const saveBtn = document.getElementById('save-name-btn');
+      const nameInput = document.getElementById('finder-name-input');
 
-      // Ha QR kód beolvasásával érkezett a látogató
       if (scannedCode) {
+        statusCard.classList.remove('hidden');
         try {
           const docRef = doc(db, "qrcodes", scannedCode);
-          await updateDoc(docRef, { isFound: true });
-          statusEl.innerText = `Sikeresen megtaláltad ezt a kódot: ${scannedCode}!`;
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            if (!data.isFound) {
+              statusEl.innerText = `Sikeresen megtaláltad a(z) ${data.name} kódját! Add meg a neved:`;
+              nameForm.classList.remove('hidden');
+            } else {
+              const finder = data.finderName ? data.finderName : "Valaki";
+              statusEl.innerText = `Ezt a kódot (${data.name}) már megtalálta: ${finder}!`;
+            }
+          } else {
+            statusEl.innerText = "Érvénytelen QR kód!";
+          }
         } catch (error) {
-          console.error("Hiba a frissítéskor:", error);
-          statusEl.innerText = "Nem sikerült a kódot frissíteni (vagy érvénytelen kód).";
+          console.error("Hiba a kód feldolgozásakor:", error);
+          statusEl.innerText = "Hiba történt a kód beolvasásakor.";
         }
       }
 
-      // Összes kód betöltése az adatbázisból
+      saveBtn.onclick = async () => {
+        const name = nameInput.value.trim() || "Névtelen megtaláló";
+
+        try {
+          const docRef = doc(db, "qrcodes", scannedCode);
+          await updateDoc(docRef, { 
+            isFound: true, 
+            finderName: name 
+          });
+          
+          nameForm.classList.add('hidden');
+          statusEl.innerText = `Köszönjük, ${name}! A kód megtalálva és elmentve.`;
+          await loadCodeList();
+        } catch (error) {
+          console.error("Hiba a név mentésekor:", error);
+        }
+      };
+
+      await loadCodeList();
+    }
+
+    async function loadCodeList() {
       const querySnapshot = await getDocs(collection(db, "qrcodes"));
       const listEl = document.getElementById('code-list');
       listEl.innerHTML = "";
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      querySnapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data();
         const card = document.createElement('div');
         
         const isFound = data.isFound;
-        card.className = `p-4 rounded-lg border flex justify-between items-center ${
+        const finder = data.finderName;
+
+        card.className = `p-4 rounded-lg border flex flex-col justify-between ${
           isFound 
             ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200' 
             : 'bg-slate-800/50 border-slate-700 text-slate-400'
         }`;
 
         card.innerHTML = `
-          <span class="font-medium">${data.name}</span>
-          <span class="px-2 py-1 text-xs font-semibold rounded ${
-            isFound ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'
-          }">
-            ${isFound ? 'MEGTALÁLVA' : 'REJTVE'}
-          </span>
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-medium text-lg text-white">${data.name}</span>
+            <span class="px-2 py-1 text-xs font-semibold rounded ${
+              isFound ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'
+            }">
+              ${isFound ? 'MEGTALÁLVA' : 'REJTVE'}
+            </span>
+          </div>
+          ${
+            isFound && finder 
+              ? `<p class="text-xs text-emerald-400">Megtaláló: <span class="font-semibold text-emerald-200">${finder}</span></p>` 
+              : ''
+          }
         `;
         listEl.appendChild(card);
       });
