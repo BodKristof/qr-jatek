@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Kód Vadászat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-6">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-center mb-2">QR Kód Vadászat</h1>
+    <p id="status-message" class="text-center text-yellow-400 font-semibold mb-6"></p>
+
+    <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <p class="text-gray-400 col-span-2 text-center">Betöltés...</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // IDE ILLESZD BE A SAJÁT FIREBASE CONFIG-ODAT:
+    const firebaseConfig = {
+      apiKey: "AIzaSyDIMi7p8hoiiRjUP1zWMohMn0VUYX8jrYU",
+      authDomain: "qr-game-5d51b.firebaseapp.com",
+      projectId: "qr-game-5d51b",
+      storageBucket: "qr-game-5d51b.firebasestorage.app",
+      messagingSenderId: "164175283230",
+      appId: "1:164175283230:web:9c04c2fabec9c3600f5a0f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // URL paraméter lekérése (pl. ?code=kod_01)
+    const urlParams = new URLSearchParams(window.location.search);
+    const scannedCode = urlParams.get('code');
+
+    async function initGame() {
+      const statusEl = document.getElementById('status-message');
+
+      // Ha QR kód beolvasásával érkezett a látogató
+      if (scannedCode) {
+        try {
+          const docRef = doc(db, "qrcodes", scannedCode);
+          await updateDoc(docRef, { isFound: true });
+          statusEl.innerText = `Sikeresen megtaláltad ezt a kódot: ${scannedCode}!`;
+        } catch (error) {
+          console.error("Hiba a frissítéskor:", error);
+          statusEl.innerText = "Nem sikerült a kódot frissíteni (vagy érvénytelen kód).";
+        }
+      }
+
+      // Összes kód betöltése az adatbázisból
+      const querySnapshot = await getDocs(collection(db, "qrcodes"));
+      const listEl = document.getElementById('code-list');
+      listEl.innerHTML = "";
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const card = document.createElement('div');
+        
+        const isFound = data.isFound;
+        card.className = `p-4 rounded-lg border flex justify-between items-center ${
+          isFound 
+            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200' 
+            : 'bg-slate-800/50 border-slate-700 text-slate-400'
+        }`;
+
+        card.innerHTML = `
+          <span class="font-medium">${data.name}</span>
+          <span class="px-2 py-1 text-xs font-semibold rounded ${
+            isFound ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'
+          }">
+            ${isFound ? 'MEGTALÁLVA' : 'REJTVE'}
+          </span>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
