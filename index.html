@@ -5,37 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR Kód Vadászat</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Konfetti könyvtár -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-6">
+<body class="bg-neutral-900 text-amber-50 min-h-screen p-6">
   <div class="max-w-2xl mx-auto space-y-6">
-    <h1 class="text-3xl font-bold text-center">QR Kód Vadászat</h1>
+    <h1 class="text-3xl font-bold text-center text-orange-500 tracking-wide">QR Kód Vadászat</h1>
     
     <!-- Értesítési sáv -->
-    <div id="status-card" class="hidden p-4 rounded-lg bg-slate-800 border border-slate-700 text-center">
-      <p id="status-message" class="text-yellow-400 font-semibold mb-3"></p>
+    <div id="status-card" class="hidden p-4 rounded-xl bg-neutral-800 border border-orange-500/40 text-center shadow-lg shadow-orange-950/20">
+      <p id="status-message" class="text-amber-400 font-semibold mb-3"></p>
       
       <!-- Névbeviteli űrlap -->
       <div id="name-form" class="hidden flex flex-col sm:flex-row gap-2 justify-center items-center">
-        <input type="text" id="finder-name-input" placeholder="A te neved..." class="px-4 py-2 rounded bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-emerald-500 w-full sm:w-auto">
-        <button id="save-name-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded w-full sm:w-auto transition">
+        <input type="text" id="finder-name-input" placeholder="A te neved..." class="px-4 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-amber-100 focus:outline-none focus:border-orange-500 w-full sm:w-auto">
+        <button id="save-name-btn" class="px-5 py-2 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg w-full sm:w-auto transition shadow-md">
           Mentés
         </button>
       </div>
     </div>
 
     <!-- Ranglista szekció -->
-    <div class="bg-slate-800/80 p-4 rounded-lg border border-slate-700">
-      <h2 class="text-xl font-bold mb-3 text-emerald-400 border-b border-slate-700 pb-2">🏆 Ranglista</h2>
-      <div id="leaderboard" class="space-y-1 text-sm">
-        <p class="text-gray-400">Betöltés...</p>
+    <div class="bg-neutral-800/90 p-5 rounded-xl border border-neutral-700 shadow-md">
+      <h2 class="text-xl font-bold mb-3 text-orange-400 border-b border-neutral-700 pb-2 flex items-center gap-2">
+        <span>🏆</span> Ranglista
+      </h2>
+      <div id="leaderboard" class="space-y-2 text-sm">
+        <p class="text-neutral-400">Betöltés...</p>
       </div>
     </div>
 
     <!-- QR-kódok listája -->
     <div>
-      <h2 class="text-xl font-bold mb-3 text-slate-300">QR Kódok</h2>
+      <h2 class="text-xl font-bold mb-3 text-neutral-300">QR Kódok</h2>
       <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <p class="text-gray-400 col-span-2 text-center">Betöltés...</p>
+        <p class="text-neutral-400 col-span-2 text-center">Betöltés...</p>
       </div>
     </div>
   </div>
@@ -74,7 +78,7 @@
 
           if (docSnap.exists()) {
             const data = docSnap.data();
-            const points = data.points || 1;
+            const points = Number(data.points) || 1;
             
             if (!data.isFound) {
               statusEl.innerText = `Sikeresen megtaláltad a(z) ${data.name} kódját (${points} pont)! Add meg a neved:`;
@@ -101,9 +105,19 @@
             isFound: true, 
             finderName: name 
           });
+
+          // Konfetti indítása
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#f97316', '#f59e0b', '#ef4444', '#ffffff']
+            });
+          }
           
           nameForm.classList.add('hidden');
-          statusEl.innerText = `Köszönjük, ${name}! A kód megtalálva és elmentve.`;
+          statusEl.innerText = `Köszönjük, ${name}! A kód megtalálva és elmentve. 🎉`;
           await loadCodeListAndLeaderboard();
         } catch (error) {
           console.error("Hiba a név mentésekor:", error);
@@ -129,33 +143,32 @@
         
         const isFound = data.isFound;
         const finder = data.finderName;
-        const points = data.points || 1;
+        const points = Number(data.points) || 1;
 
-        // Pontszámok gyűjtése a ranglistához
         if (isFound && finder) {
           scores[finder] = (scores[finder] || 0) + points;
         }
 
-        card.className = `p-4 rounded-lg border flex flex-col justify-between ${
+        card.className = `p-4 rounded-xl border flex flex-col justify-between transition ${
           isFound 
-            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200' 
-            : 'bg-slate-800/50 border-slate-700 text-slate-400'
+            ? 'bg-orange-950/20 border-orange-500/40 text-amber-200' 
+            : 'bg-neutral-800/50 border-neutral-700 text-neutral-400'
         }`;
 
         card.innerHTML = `
           <div class="flex justify-between items-center mb-2">
-            <span class="font-medium text-lg text-white">${data.name}</span>
-            <span class="px-2 py-1 text-xs font-semibold rounded ${
-              isFound ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-400'
+            <span class="font-semibold text-lg text-neutral-100">${data.name}</span>
+            <span class="px-2.5 py-1 text-xs font-bold rounded-full ${
+              isFound ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-neutral-700 text-neutral-400'
             }">
               ${isFound ? 'MEGTALÁLVA' : 'REJTVE'}
             </span>
           </div>
-          <div class="flex justify-between items-center text-xs mt-2">
-            <span class="text-amber-400 font-semibold">⭐ ${points} pont</span>
+          <div class="flex justify-between items-center text-xs mt-2 pt-2 border-t border-neutral-700/40">
+            <span class="text-amber-400 font-bold">⭐ ${points} pont</span>
             ${
               isFound && finder 
-                ? `<span class="text-emerald-400">Megtaláló: <strong class="text-emerald-200">${finder}</strong></span>` 
+                ? `<span class="text-neutral-300">Megtaláló: <strong class="text-orange-300">${finder}</strong></span>` 
                 : ''
             }
           </div>
@@ -163,18 +176,17 @@
         listEl.appendChild(card);
       });
 
-      // Ranglista kirajzolása (pontszám szerint csökkenő sorrendben)
       const sortedPlayers = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
       if (sortedPlayers.length === 0) {
-        leaderboardEl.innerHTML = `<p class="text-gray-500 italic">Még senki nem talált meg egyetlen kódot sem.</p>`;
+        leaderboardEl.innerHTML = `<p class="text-neutral-500 italic">Még senki nem talált meg egyetlen kódot sem.</p>`;
       } else {
         sortedPlayers.forEach(([player, score], index) => {
           const row = document.createElement('div');
-          row.className = "flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0";
+          row.className = "flex justify-between items-center py-1.5 px-2 rounded-lg bg-neutral-900/40 border border-neutral-800";
           row.innerHTML = `
-            <span class="font-medium text-slate-200">${index + 1}. ${player}</span>
-            <span class="font-bold text-amber-400">${score} pont</span>
+            <span class="font-medium text-neutral-200">${index + 1}. ${player}</span>
+            <span class="font-bold text-orange-400">${score} pont</span>
           `;
           leaderboardEl.appendChild(row);
         });
