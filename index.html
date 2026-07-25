@@ -53,7 +53,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDIMi7p8hoiiRjUP1zWMohMn0VUYX8jrYU",
@@ -71,7 +71,6 @@
     const scannedCode = urlParams.get('code');
     const isSetupMode = urlParams.get('setup');
 
-    // Az új, egyedi véletlenszerű azonosítóid
     const generatedCodes = [
       "PrB5arKF6hSS",
       "hhT7I64f3Cd7",
@@ -109,28 +108,40 @@
       const statusCard = document.getElementById('status-card');
       const statusEl = document.getElementById('status-message');
       statusCard.classList.remove('hidden');
-      statusEl.innerText = "30 új titok beállítása a Firebase-ben...";
+      statusEl.innerText = "Régi kódok törlése és az új 30 titok beállítása...";
 
-      for (let i = 0; i < generatedCodes.length; i++) {
-        const codeId = generatedCodes[i];
-        
-        let points = 1;
-        if (i >= 10 && i < 20) points = 2;
-        else if (i >= 20) points = 3;
+      try {
+        // 1. Régi adatbázis tartalom törlése
+        const oldDocs = await getDocs(collection(db, "qrcodes"));
+        for (const oldDoc of oldDocs.docs) {
+          await deleteDoc(doc(db, "qrcodes", oldDoc.id));
+        }
 
-        await setDoc(doc(db, "qrcodes", codeId), {
-          name: `${i + 1}. titok`,
-          isFound: false,
-          finderName: "",
-          points: points,
-          imageUrl: ""
-        });
+        // 2. Csak a 30 új kód feltöltése
+        for (let i = 0; i < generatedCodes.length; i++) {
+          const codeId = generatedCodes[i];
+          
+          let points = 1;
+          if (i >= 10 && i < 20) points = 2;
+          else if (i >= 20) points = 3;
+
+          await setDoc(doc(db, "qrcodes", codeId), {
+            name: `${i + 1}. titok`,
+            isFound: false,
+            finderName: "",
+            points: points,
+            imageUrl: ""
+          });
+        }
+
+        statusEl.innerText = "Adatbázis megtisztítva és az új 30 titok elmentve! Az oldal újratöltődik...";
+        setTimeout(() => {
+          window.location.href = window.location.pathname;
+        }, 2000);
+      } catch (error) {
+        console.error("Hiba a setup során:", error);
+        statusEl.innerText = "Hiba történt az adatbázis frissítésekor.";
       }
-
-      statusEl.innerText = "Sikeresen frissítve mind a 30 titok! Az oldal most újratöltődik...";
-      setTimeout(() => {
-        window.location.href = window.location.pathname;
-      }, 2000);
     }
 
     function triggerConfetti() {
