@@ -71,20 +71,45 @@
     const scannedCode = urlParams.get('code');
     const isSetupMode = urlParams.get('setup');
 
+    // Az új, egyedi véletlenszerű azonosítóid
     const generatedCodes = [
-      "x8k2m9Lq", "p4N7v1Rz", "m3K9x2Wy", "b8J4v6Lp", "t1Q5m8Xz",
-      "r9V2k4Nj", "w3M7p1Ly", "z5B8v3Kq", "c2N4x9Rt", "h7L1m5Wz",
-      "g4K8v2Px", "d9R3m7Lq", "f1N5v8Xz", "s6K2p9Wy", "j3M8v1Rt",
-      "v7L4x2Nq", "q1R9m5Wz", "k3N7v8Px", "y8K1m4Lq", "x5R2v9Wz",
-      "p9M3x7Rt", "m1N8v4Kq", "b4L2m9Wz", "t7R5v1Px", "r3K8m2Lq",
-      "w9N4v7Xz", "z1M6p3Rt", "c8L5v2Kq", "h3R9m1Wz", "g7N2v8Px"
+      "PrB5arKF6hSS",
+      "hhT7I64f3Cd7",
+      "KLjJw3VbGU6D",
+      "iHdCuByxN44g",
+      "wYJNEHOyBu9Z",
+      "ShO313xvkuzB",
+      "Ki5HE2rz4K8E",
+      "3TdOCDTHZ7td",
+      "lhNCKWjO1gI4",
+      "jGGumRHx6QJA",
+      "cnYGIpjBapfY",
+      "EEIXl2GJCzFx",
+      "wc5acjvx1js1",
+      "fHkFSZJ54je9",
+      "F97yYHtVoTrH",
+      "8nGGCzw7zeNL",
+      "paiewexYrZTh",
+      "QexBvAEcgZZH",
+      "fYyfX2TlQ8qB",
+      "dpCXkiE8CElu",
+      "Bw9Cl5cimluZ",
+      "tsweIaVpVJbz",
+      "AGAaAMOn3xEp",
+      "GPRCKafBSHhV",
+      "FhBvbTHvVAOr",
+      "iOxNegbdIsK7",
+      "goUJ5SSx0en4",
+      "yKVp3NovFE4k",
+      "Ca62zrZ3ijMt",
+      "LVqKi2Uq4cb3"
     ];
 
     async function setupDatabase() {
       const statusCard = document.getElementById('status-card');
       const statusEl = document.getElementById('status-message');
       statusCard.classList.remove('hidden');
-      statusEl.innerText = "30 titok beállítása tisztított nevekkel...";
+      statusEl.innerText = "30 új titok beállítása a Firebase-ben...";
 
       for (let i = 0; i < generatedCodes.length; i++) {
         const codeId = generatedCodes[i];
@@ -102,7 +127,7 @@
         });
       }
 
-      statusEl.innerText = "Sikeresen frissítve a 30 titok! Az oldal most újratöltődik...";
+      statusEl.innerText = "Sikeresen frissítve mind a 30 titok! Az oldal most újratöltődik...";
       setTimeout(() => {
         window.location.href = window.location.pathname;
       }, 2000);
@@ -217,7 +242,6 @@
           scores[finder] = (scores[finder] || 0) + points;
         }
 
-        // Nehézségi stílusok beállítása pontszám alapján
         let diffText = "Könnyű";
         let diffBadgeClass = "bg-emerald-950/60 text-emerald-400 border-emerald-800/80";
         
@@ -244,7 +268,6 @@
 
         card.innerHTML = `
           <div>
-            <!-- Nehézség jelző a kép felett -->
             <div class="flex justify-between items-center text-[10px] uppercase font-semibold mb-1">
               <span class="px-1.5 py-0.5 rounded border ${diffBadgeClass}">
                 ${diffText}
