@@ -3,52 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Kód Vadászat</title>
+  <title>Mozis safari</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body class="bg-neutral-900 text-neutral-100 min-h-screen p-4 sm:p-6 font-sans">
   <div class="max-w-xl mx-auto space-y-6">
     
-    <!-- Fejléc -->
     <header class="text-center pt-4">
-      <h1 class="text-2xl font-bold text-orange-500">QR Kód Vadászat</h1>
-      <p class="text-xs text-neutral-400 mt-1">Találd meg a kódokat, gyűjtsd a pontokat!</p>
+      <h1 class="text-2xl font-bold text-orange-500 tracking-wide">Mozis safari</h1>
+      <p id="header-text" class="text-xs text-neutral-400 mt-2 leading-relaxed whitespace-pre-line">
+        Találd meg a kódokat bla bla bla, álmos vagyok holnap befejezem
+      </p>
     </header>
     
-    <!-- Értesítési sáv -->
-    <div id="status-card" class="hidden p-4 rounded-lg bg-neutral-800 border border-orange-500/40 text-center">
-      <p id="status-message" class="text-amber-300 font-semibold text-sm mb-3"></p>
+    <div id="status-card" class="hidden p-4 rounded-lg bg-neutral-800 border border-orange-500/40 text-center shadow-lg">
+      <p id="status-message" class="text-amber-300 font-semibold text-sm mb-3 whitespace-pre-line"></p>
       
-      <!-- Névbeviteli űrlap -->
       <div id="name-form" class="hidden flex flex-col sm:flex-row gap-2 justify-center items-center max-w-sm mx-auto">
-        <input type="text" id="finder-name-input" placeholder="A neved..." class="px-3 py-2 text-sm rounded bg-neutral-900 border border-neutral-700 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-orange-500 w-full sm:w-auto">
-        <button id="save-name-btn" class="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded w-full sm:w-auto transition">
+        <input type="text" id="finder-name-input" placeholder="Becses neved..." class="px-3 py-2 text-sm rounded bg-neutral-900 border border-neutral-700 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-orange-500 w-full sm:w-auto">
+        <button id="save-name-btn" class="px-4 py-2 text-sm bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded w-full sm:w-auto transition shadow">
           Mentés
         </button>
       </div>
     </div>
 
-    <!-- Ranglista szekció -->
-    <section class="bg-neutral-800/60 p-4 rounded-lg border border-neutral-700/60">
-      <h2 class="text-sm font-bold text-orange-400 uppercase tracking-wider mb-3 border-b border-neutral-700/60 pb-2">
-        Ranglista
+    <section class="bg-neutral-800/60 p-4 rounded-lg border border-neutral-700/60 shadow-sm">
+      <h2 class="text-sm font-bold text-orange-400 uppercase tracking-wider mb-3 border-b border-neutral-700/60 pb-2 flex justify-between items-center">
+        <span>Ranglista</span>
+        <span id="found-counter" class="text-[11px] font-normal normal-case text-neutral-400"></span>
       </h2>
       <div id="leaderboard" class="space-y-1.5 text-sm">
         <p class="text-neutral-500 text-xs italic">Betöltés...</p>
       </div>
     </section>
 
-    <!-- QR-kódok listája -->
-    <section class="space-y-3">
-      <h2 class="text-sm font-bold text-neutral-400 uppercase tracking-wider">
-        Titkok állapota (30 db)
-      </h2>
-      <div id="code-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <p class="text-neutral-500 text-xs italic col-span-2 text-center py-2">Betöltés...</p>
-      </div>
-    </section>
+    <!-- Szűrőgombok sora -->
+    <div class="flex justify-center gap-2">
+      <button id="filter-all" class="px-3 py-1.5 text-xs font-semibold rounded border border-orange-500 bg-orange-600 text-white transition">
+        Összes
+      </button>
+      <button id="filter-hidden" class="px-3 py-1.5 text-xs font-semibold rounded border border-neutral-700 bg-neutral-800/80 text-neutral-400 hover:border-neutral-600 transition">
+        Még rejtve
+      </button>
+      <button id="filter-found" class="px-3 py-1.5 text-xs font-semibold rounded border border-neutral-700 bg-neutral-800/80 text-neutral-400 hover:border-neutral-600 transition">
+        Megtalálva
+      </button>
+    </div>
 
+    <div id="category-sections" class="space-y-8">
+      <p class="text-neutral-500 text-xs italic text-center py-2">Betöltés...</p>
+    </div>
+
+  </div>
+
+  <div id="image-modal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm cursor-pointer" onclick="this.classList.add('hidden')">
+    <div class="max-w-md w-full bg-neutral-900 p-2 rounded-lg border border-neutral-700">
+      <img id="modal-img" src="" alt="Nagyított kép" class="w-full h-auto rounded">
+      <p class="text-center text-xs text-neutral-400 mt-2">Kattints bárhova a bezáráshoz</p>
+    </div>
   </div>
 
   <script type="module">
@@ -71,75 +84,87 @@
     const scannedCode = urlParams.get('code');
     const isSetupMode = urlParams.get('setup');
 
-    const generatedCodes = [
-      "PrB5arKF6hSS",
-      "hhT7I64f3Cd7",
-      "KLjJw3VbGU6D",
-      "iHdCuByxN44g",
-      "wYJNEHOyBu9Z",
-      "ShO313xvkuzB",
-      "Ki5HE2rz4K8E",
-      "3TdOCDTHZ7td",
-      "lhNCKWjO1gI4",
-      "jGGumRHx6QJA",
-      "cnYGIpjBapfY",
-      "EEIXl2GJCzFx",
-      "wc5acjvx1js1",
-      "fHkFSZJ54je9",
-      "F97yYHtVoTrH",
-      "8nGGCzw7zeNL",
-      "paiewexYrZTh",
-      "QexBvAEcgZZH",
-      "fYyfX2TlQ8qB",
-      "dpCXkiE8CElu",
-      "Bw9Cl5cimluZ",
-      "tsweIaVpVJbz",
-      "AGAaAMOn3xEp",
-      "GPRCKafBSHhV",
-      "FhBvbTHvVAOr",
-      "iOxNegbdIsK7",
-      "goUJ5SSx0en4",
-      "yKVp3NovFE4k",
-      "Ca62zrZ3ijMt",
-      "LVqKi2Uq4cb3"
+    const secretsData = [
+      { id: "dpCXkiE8CElu", num: 1, img: "kepek/530.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "wYJNEHOyBu9Z", num: 2, img: "kepek/585.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "lhNCKWjO1gI4", num: 3, img: "kepek/506.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "jGGumRHx6QJA", num: 4, img: "kepek/568.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "EEIXl2GJCzFx", num: 5, img: "kepek/565.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "wc5acjvx1js1", num: 6, img: "kepek/549.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "paiewexYrZTh", num: 7, img: "kepek/558.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "QexBvAEcgZZH", num: 8, img: "kepek/537.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "AGAaAMOn3xEp", num: 9, img: "kepek/554.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "fYyfX2TlQ8qB", num: 10, img: "kepek/560.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "PrB5arKF6hSS", num: 11, img: "kepek/534.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "GPRCKafBSHhV", num: 12, img: "kepek/538.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "Ca62zrZ3ijMt", num: 13, img: "kepek/567.jpg", level: "Könnyű", points: 1, blur: 10 },
+      { id: "hhT7I64f3Cd7", num: 14, img: "kepek/536.jpg", level: "Közepes", points: 2, blur: 10 },
+      { id: "ShO313xvkuzB", num: 15, img: "kepek/522.jpg", level: "Közepes", points: 2, blur: 10 },
+      { id: "Ki5HE2rz4K8E", num: 16, img: "kepek/584.jpg", level: "Közepes", points: 2, blur: 10 },
+      { id: "fHkFSZJ54je9", num: 17, img: "kepek/504.jpg", level: "Közepes", points: 2, blur: 10 },
+      { id: "Bw9Cl5cimluZ", num: 18, img: "kepek/578.jpg", level: "Közepes", points: 2, blur: 10 },
+      { id: "LVqKi2Uq4cb3", num: 19, img: "kepek/576.jpg", level: "Közepes", points: 2, blur: 10 },
+      { id: "KLjJw3VbGU6D", num: 20, img: "kepek/535.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "iHdCuByxN44g", num: 21, img: "kepek/505.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "3TdOCDTHZ7td", num: 22, img: "kepek/540.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "cnYGIpjBapfY", num: 23, img: "kepek/569.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "F97yYHtVoTrH", num: 24, img: "kepek/527.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "FhBvbTHvVAOr", num: 25, img: "kepek/512.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "iOxNegbdIsK7", num: 26, img: "kepek/511.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "yKVp3NovFE4k", num: 27, img: "kepek/509.jpg", level: "Nehéz", points: 5, blur: 10 },
+      { id: "8nGGCzw7zeNL", num: 28, img: "kepek/515.jpg", level: "Extrém", points: 10, blur: 10 },
+      { id: "tsweIaVpVJbz", num: 29, img: "kepek/517.jpg", level: "Extrém", points: 10, blur: 10 },
+      { id: "goUJ5SSx0en4", num: 30, img: "kepek/597.jpg", level: "Extrém", points: 10, blur: 10 }
     ];
+
+    const categorySettings = {
+      headerText: "Találd meg a kódokat bla bla bla, álmos vagyok holnap befejezem",
+      levelTexts: {
+        "Könnyű": "1 pontot érő QR-kódok.",
+        "Közepes": "2 pontot érő QR-kódok.",
+        "Nehéz": "5 pontot érő QR-kódok.",
+        "Extrém": "10 pontot érő QR-kódok."
+      }
+    };
+
+    const levelOrder = ["Könnyű", "Közepes", "Nehéz", "Extrém"];
+    const generatedCodes = secretsData.map(item => item.id);
+
+    let activeFilter = "all"; // "all", "hidden", "found"
 
     async function setupDatabase() {
       const statusCard = document.getElementById('status-card');
       const statusEl = document.getElementById('status-message');
       statusCard.classList.remove('hidden');
-      statusEl.innerText = "Régi kódok törlése és az új 30 titok beállítása...";
+      statusEl.innerText = "Adatbázis inicializálása...";
 
       try {
-        // 1. Régi adatbázis tartalom törlése
         const oldDocs = await getDocs(collection(db, "qrcodes"));
         for (const oldDoc of oldDocs.docs) {
           await deleteDoc(doc(db, "qrcodes", oldDoc.id));
         }
 
-        // 2. Csak a 30 új kód feltöltése
-        for (let i = 0; i < generatedCodes.length; i++) {
-          const codeId = generatedCodes[i];
-          
-          let points = 1;
-          if (i >= 10 && i < 20) points = 2;
-          else if (i >= 20) points = 3;
-
-          await setDoc(doc(db, "qrcodes", codeId), {
-            name: `${i + 1}. titok`,
+        for (const item of secretsData) {
+          await setDoc(doc(db, "qrcodes", item.id), {
+            name: `${item.num}. titok`,
+            order: item.num,
             isFound: false,
             finderName: "",
-            points: points,
-            imageUrl: ""
+            points: item.points,
+            level: item.level,
+            imageUrl: item.img,
+            blur: item.blur
           });
         }
 
-        statusEl.innerText = "Adatbázis megtisztítva és az új 30 titok elmentve! Az oldal újratöltődik...";
+        await setDoc(doc(db, "settings", "textConfig"), categorySettings);
+
+        statusEl.innerText = "Sikeres frissítés! Az oldal újratöltődik...";
         setTimeout(() => {
           window.location.href = window.location.pathname;
-        }, 2000);
+        }, 1500);
       } catch (error) {
-        console.error("Hiba a setup során:", error);
+        console.error("Setup hiba:", error);
         statusEl.innerText = "Hiba történt az adatbázis frissítésekor.";
       }
     }
@@ -155,7 +180,40 @@
       }
     }
 
+    window.openModal = function(src) {
+      const modal = document.getElementById('image-modal');
+      const modalImg = document.getElementById('modal-img');
+      modalImg.src = src;
+      modal.classList.remove('hidden');
+    };
+
+    function setupFilterButtons() {
+      const btnAll = document.getElementById('filter-all');
+      const btnHidden = document.getElementById('filter-hidden');
+      const btnFound = document.getElementById('filter-found');
+
+      const activeClasses = ["bg-orange-600", "border-orange-500", "text-white"];
+      const inactiveClasses = ["bg-neutral-800/80", "border-neutral-700", "text-neutral-400", "hover:border-neutral-600"];
+
+      function updateButtons() {
+        [btnAll, btnHidden, btnFound].forEach(btn => {
+          btn.classList.remove(...activeClasses);
+          btn.classList.add(...inactiveClasses);
+        });
+
+        if (activeFilter === 'all') btnAll.classList.replace("bg-neutral-800/80", "bg-orange-600"), btnAll.classList.replace("border-neutral-700", "border-orange-500"), btnAll.classList.replace("text-neutral-400", "text-white");
+        if (activeFilter === 'hidden') btnHidden.classList.replace("bg-neutral-800/80", "bg-orange-600"), btnHidden.classList.replace("border-neutral-700", "border-orange-500"), btnHidden.classList.replace("text-neutral-400", "text-white");
+        if (activeFilter === 'found') btnFound.classList.replace("bg-neutral-800/80", "bg-orange-600"), btnFound.classList.replace("border-neutral-700", "border-orange-500"), btnFound.classList.replace("text-neutral-400", "text-white");
+      }
+
+      btnAll.onclick = () => { activeFilter = "all"; updateButtons(); loadCodeListAndLeaderboard(); };
+      btnHidden.onclick = () => { activeFilter = "hidden"; updateButtons(); loadCodeListAndLeaderboard(); };
+      btnFound.onclick = () => { activeFilter = "found"; updateButtons(); loadCodeListAndLeaderboard(); };
+    }
+
     async function initGame() {
+      setupFilterButtons();
+
       if (isSetupMode === 'true') {
         await setupDatabase();
         return;
@@ -179,18 +237,18 @@
             
             if (!data.isFound) {
               triggerConfetti();
-              statusEl.innerText = `Felfedtél egy titkot: ${data.name} (${points} pont)! Add meg a neved:`;
+              statusEl.innerText = `Megtaláltad lelkem egy darabját ${points} pontért! Add meg a neved:`;
               nameForm.classList.remove('hidden');
             } else {
               const finder = data.finderName ? data.finderName : "Valaki";
-              statusEl.innerText = `Ezt a titkot (${data.name}) már felfedte: ${finder}.`;
+              statusEl.innerText = `Elkéstél :c \n \n Ezt az állatot már megtalálta: ${finder}.`;
             }
           } else {
-            statusEl.innerText = "Ez a QR-kód nem létezik.";
+            statusEl.innerText = "Nem ér tippelgetni :c";
           }
         } catch (error) {
-          console.error("Hiba a kód feldolgozásakor:", error);
-          statusEl.innerText = "Hiba történt a beolvasáskor.";
+          console.error("Beolvasási hiba:", error);
+          statusEl.innerText = "Valami megdöglött";
         }
       }
 
@@ -206,10 +264,10 @@
 
           triggerConfetti();
           nameForm.classList.add('hidden');
-          statusEl.innerText = `Kész! Elmentettük a pontodat, ${name}.`;
+          statusEl.innerText = `Kész!`;
           await loadCodeListAndLeaderboard();
         } catch (error) {
-          console.error("Hiba a név mentésekor:", error);
+          console.error("Mentési hiba:", error);
         }
       };
 
@@ -218,98 +276,178 @@
 
     async function loadCodeListAndLeaderboard() {
       const querySnapshot = await getDocs(collection(db, "qrcodes"));
-      const listEl = document.getElementById('code-list');
+      const categoryContainer = document.getElementById('category-sections');
       const leaderboardEl = document.getElementById('leaderboard');
+      const headerTextEl = document.getElementById('header-text');
+      const foundCounterEl = document.getElementById('found-counter');
       
-      listEl.innerHTML = "";
+      categoryContainer.innerHTML = "";
       leaderboardEl.innerHTML = "";
+
+      let currentTexts = categorySettings;
+      try {
+        const settingsSnap = await getDoc(doc(db, "settings", "textConfig"));
+        if (settingsSnap.exists()) {
+          currentTexts = settingsSnap.data();
+        }
+      } catch (e) {
+        console.warn("Beállítások betöltése alapértelmezetten maradt:", e);
+      }
+
+      if (currentTexts.headerText) {
+        headerTextEl.innerText = currentTexts.headerText;
+      }
 
       const scores = {};
       const itemList = [];
+      let totalFoundCount = 0;
 
       querySnapshot.forEach((docSnapshot) => {
+        const itemData = docSnapshot.data();
         itemList.push({
           id: docSnapshot.id,
-          ...docSnapshot.data()
+          ...itemData
         });
+
+        if (itemData.isFound) {
+          totalFoundCount++;
+        }
       });
+
+      if (foundCounterEl) {
+        foundCounterEl.innerText = `Megtalálva: ${totalFoundCount}/30`;
+      }
 
       itemList.sort((a, b) => {
-        const indexA = generatedCodes.indexOf(a.id);
-        const indexB = generatedCodes.indexOf(b.id);
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-        return a.name.localeCompare(b.name, undefined, { numeric: true });
+        const orderA = a.order || generatedCodes.indexOf(a.id) + 1;
+        const orderB = b.order || generatedCodes.indexOf(b.id) + 1;
+        return orderA - orderB;
       });
 
+      const groupedItems = {
+        "Könnyű": [],
+        "Közepes": [],
+        "Nehéz": [],
+        "Extrém": []
+      };
+
       itemList.forEach((data) => {
-        const card = document.createElement('div');
-        
-        const isFound = data.isFound;
-        const finder = data.finderName;
-        const points = Number(data.points) || 1;
-        const imageUrl = data.imageUrl;
-
-        if (isFound && finder) {
-          scores[finder] = (scores[finder] || 0) + points;
+        if (data.isFound && data.finderName) {
+          scores[data.finderName] = (scores[data.finderName] || 0) + (Number(data.points) || 1);
         }
 
-        let diffText = "Könnyű";
-        let diffBadgeClass = "bg-emerald-950/60 text-emerald-400 border-emerald-800/80";
-        
-        if (points === 2) {
-          diffText = "Közepes";
-          diffBadgeClass = "bg-amber-950/60 text-amber-400 border-amber-800/80";
-        } else if (points >= 3) {
-          diffText = "Nehéz";
-          diffBadgeClass = "bg-rose-950/60 text-rose-400 border-rose-800/80";
-        }
+        if (activeFilter === "hidden" && data.isFound) return;
+        if (activeFilter === "found" && !data.isFound) return;
 
-        card.className = `p-3 rounded border text-sm flex flex-col justify-between ${
-          isFound 
-            ? 'bg-neutral-800/30 border-orange-500/20 text-neutral-300' 
-            : 'bg-neutral-800/80 border-neutral-700/80 text-neutral-400'
-        }`;
-
-        let imageHtml = "";
-        if (imageUrl) {
-          imageHtml = `<img src="${imageUrl}" alt="${data.name}" class="w-full h-28 object-cover rounded border border-neutral-700/50 transition-all duration-500 ${isFound ? '' : 'blur-md select-none pointer-events-none'}">`;
+        const level = data.level || "Könnyű";
+        if (groupedItems[level]) {
+          groupedItems[level].push(data);
         } else {
-          imageHtml = `<div class="w-full h-20 bg-neutral-900/60 rounded flex items-center justify-center border border-neutral-800 text-neutral-600 text-xs ${isFound ? '' : 'blur-[2px] select-none'}">${isFound ? 'Kép helye' : '🔒 Rejtett kép'}</div>`;
+          groupedItems["Könnyű"].push(data);
         }
+      });
 
-        card.innerHTML = `
-          <div>
-            <div class="flex justify-between items-center text-[10px] uppercase font-semibold mb-1">
-              <span class="px-1.5 py-0.5 rounded border ${diffBadgeClass}">
-                ${diffText}
+      levelOrder.forEach((level) => {
+        const items = groupedItems[level];
+        if (!items || items.length === 0) return;
+
+        const section = document.createElement('section');
+        section.className = "space-y-3";
+
+        let badgeClass = "text-emerald-400 border-emerald-800/80 bg-emerald-950/40";
+        if (level === "Közepes") badgeClass = "text-amber-400 border-amber-800/80 bg-amber-950/40";
+        if (level === "Nehéz") badgeClass = "text-orange-400 border-orange-800/80 bg-orange-950/40";
+        if (level === "Extrém") badgeClass = "text-rose-400 border-rose-800/80 bg-rose-950/40";
+
+        const descText = (currentTexts.levelTexts && currentTexts.levelTexts[level]) 
+          ? currentTexts.levelTexts[level] 
+          : "";
+
+        section.innerHTML = `
+          <div class="border-b border-neutral-800 pb-2">
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-neutral-200">${level} szint</h2>
+              <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded border ${badgeClass}">
+                ${items[0]?.points || 1} PT
               </span>
-              <span class="text-neutral-500 font-mono">${points} pt</span>
             </div>
-
-            ${imageHtml}
-
-            <div class="flex justify-between items-center my-2">
-              <span class="font-medium text-neutral-200">${data.name}</span>
-              <span class="px-2 py-0.5 text-[10px] font-semibold rounded ${
-                isFound 
-                  ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
-                  : 'bg-neutral-700/50 text-neutral-500'
-              }">
-                ${isFound ? 'FELFEDVE' : 'REJTVE'}
-              </span>
-            </div>
+            ${descText ? `<p class="text-xs text-neutral-400 mt-1 whitespace-pre-line">${descText}</p>` : ''}
           </div>
-
-          <div class="flex justify-between items-center text-xs text-neutral-400 pt-2 border-t border-neutral-700/40 mt-1">
-            <span class="text-neutral-500 text-[11px]">Megtaláló</span>
-            ${
-              isFound && finder 
-                ? `<span class="text-orange-300/90 font-medium">${finder}</span>` 
-                : '<span class="text-neutral-600 italic">Még rejtve</span>'
-            }
-          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="grid-${level}"></div>
         `;
-        listEl.appendChild(card);
+
+        categoryContainer.appendChild(section);
+
+        const gridEl = section.querySelector(`#grid-${level}`);
+
+        items.forEach((data) => {
+          const card = document.createElement('div');
+          const isFound = data.isFound;
+          const finder = data.finderName;
+          const points = Number(data.points) || 1;
+          const imageUrl = data.imageUrl;
+          const blurPx = data.blur !== undefined ? Number(data.blur) : 5;
+
+          let diffBadgeClass = "bg-emerald-950/60 text-emerald-400 border-emerald-800/80";
+          if (level === "Közepes") diffBadgeClass = "bg-amber-950/60 text-amber-400 border-amber-800/80";
+          if (level === "Nehéz") diffBadgeClass = "bg-orange-950/60 text-orange-400 border-orange-800/80";
+          if (level === "Extrém") diffBadgeClass = "bg-rose-950/60 text-rose-400 border-rose-800/80";
+
+          card.className = `p-3 rounded border text-sm flex flex-col justify-between transition ${
+            isFound 
+              ? 'bg-neutral-800/30 border-orange-500/20 text-neutral-300' 
+              : 'bg-neutral-800/80 border-neutral-700/80 text-neutral-400'
+          }`;
+
+          let imageHtml = "";
+          if (imageUrl) {
+            const blurStyle = isFound ? 'filter: blur(0px);' : `filter: blur(${blurPx}px);`;
+            const clickAttr = isFound ? `onclick="window.openModal('${imageUrl}')"` : '';
+            const cursorStyle = isFound ? 'cursor-pointer hover:opacity-90' : 'select-none pointer-events-none';
+
+            imageHtml = `
+              <div class="w-full aspect-[3/4] bg-neutral-950 rounded overflow-hidden mb-2 border border-neutral-700/50 flex items-center justify-center ${cursorStyle}" ${clickAttr}>
+                <img src="${imageUrl}" alt="${data.name}" style="${blurStyle}" class="w-full h-full object-cover transition-all duration-500">
+              </div>
+            `;
+          } else {
+            imageHtml = `<div class="w-full aspect-[3/4] bg-neutral-900/60 rounded mb-2 flex items-center justify-center border border-neutral-800 text-neutral-600 text-xs">${isFound ? 'Kép helye' : '🔒 Rejtett kép'}</div>`;
+          }
+
+          card.innerHTML = `
+            <div>
+              <div class="flex justify-between items-center text-[10px] uppercase font-semibold mb-1">
+                <span class="px-1.5 py-0.5 rounded border ${diffBadgeClass}">
+                  ${level}
+                </span>
+                <span class="text-neutral-500 font-mono">${points} pt</span>
+              </div>
+
+              ${imageHtml}
+
+              <div class="flex justify-between items-center my-2">
+                <span class="font-medium text-neutral-200">${data.name}</span>
+                <span class="px-2 py-0.5 text-[10px] font-semibold rounded ${
+                  isFound 
+                    ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
+                    : 'bg-neutral-700/50 text-neutral-500'
+                }">
+                  ${isFound ? 'MEGTALÁLVA' : 'REJTVE'}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-neutral-400 pt-2 border-t border-neutral-700/40 mt-1">
+              <span class="text-neutral-500 text-[11px]">Megtaláló</span>
+              ${
+                isFound && finder 
+                  ? `<span class="text-orange-300/90 font-medium">${finder}</span>` 
+                  : '<span class="text-neutral-600 italic">Még rejtve</span>'
+              }
+            </div>
+          `;
+          gridEl.appendChild(card);
+        });
       });
 
       const sortedPlayers = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -319,10 +457,25 @@
       } else {
         sortedPlayers.forEach(([player, score], index) => {
           const row = document.createElement('div');
-          row.className = "flex justify-between items-center py-1 px-2 rounded bg-neutral-900/50 border border-neutral-800/80 text-xs";
+          
+          let rankBadge = `${index + 1}.`;
+          let rowBg = "bg-neutral-900/50 border-neutral-800/80";
+
+          if (index === 0) {
+            rankBadge = "1.";
+            rowBg = "bg-amber-950/30 border-amber-500/30 text-amber-200";
+          } else if (index === 1) {
+            rankBadge = "2.";
+            rowBg = "bg-neutral-800/40 border-neutral-600/30";
+          } else if (index === 2) {
+            rankBadge = "3.";
+            rowBg = "bg-amber-900/20 border-amber-800/30";
+          }
+
+          row.className = `flex justify-between items-center py-1.5 px-2.5 rounded border text-xs ${rowBg}`;
           
           row.innerHTML = `
-            <span class="font-medium text-neutral-300">${index + 1}. ${player}</span>
+            <span class="font-medium">${rankBadge} ${player}</span>
             <span class="font-bold text-orange-400">${score} pont</span>
           `;
           leaderboardEl.appendChild(row);
